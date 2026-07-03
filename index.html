@@ -1883,8 +1883,8 @@ document.getElementById("guest-name-input").addEventListener("input", function()
     badge.textContent = labels[found.status] || "En lista";
     badge.style.display = "block";
   } else if (val.length >= 3) {
-    badge.className = "guest-status-badge gsb-unknown";
-    badge.textContent = "No encontrado — se agregará como pendiente";
+    badge.className = "guest-status-badge gsb-declined";
+    badge.textContent = "Nombre no encontrado en la lista de invitados";
     badge.style.display = "block";
   } else {
     badge.style.display = "none";
@@ -1895,23 +1895,21 @@ async function enterCarta() {
   const input = document.getElementById("guest-name-input");
   const name = input.value.trim();
   if (!name) { input.focus(); return; }
-  const greet = greeting(name);
 
-  document.getElementById("display-greeting").textContent = greet;
-  document.getElementById("display-guest-name").textContent = name;
-
-let found = findGuest(name);
-if (!found) {
-  found = { name, status: "pending" };
-  if (USE_SUPABASE) {
-    const { data } = await supabaseClient.from("guests").insert({ name, status: "pending" }).select().single();
-    if (data) { found.id = data.id; }
-  } else {
-    found.id = nextId++;
+  const found = findGuest(name);
+  if (!found) {
+    const badge = document.getElementById("guest-status-badge");
+    badge.className = "guest-status-badge gsb-declined";
+    badge.textContent = "Este nombre no está en la lista de invitados. Contacta a la mamá de Yoselin.";
+    badge.style.display = "block";
+    input.focus();
+    return; // no deja continuar si el nombre no está pre-registrado
   }
-  GUESTS.push(found);
-}
-currentGuest = found;
+
+  const greet = greeting(found.name);
+  document.getElementById("display-greeting").textContent = greet;
+  document.getElementById("display-guest-name").textContent = found.name;
+  currentGuest = found;
 currentFamily = found.group_id
   ? GUESTS.filter(g => g.group_id === found.group_id)
   : [found];
