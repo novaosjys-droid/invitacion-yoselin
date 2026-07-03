@@ -53,9 +53,25 @@ body {
   overflow-x: hidden;
 }
 
+
 /* ══════════════════════════════════════════════════
    PARTICLE CANVAS
 ══════════════════════════════════════════════════ */
+.bg-aurora {
+  position: fixed; inset: -15%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 25%, rgba(212,168,83,0.10), transparent 42%),
+    radial-gradient(circle at 82% 70%, rgba(232,160,180,0.09), transparent 46%),
+    radial-gradient(circle at 50% 95%, rgba(212,168,83,0.06), transparent 38%);
+  filter: blur(70px);
+  animation: aurora-drift 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(3%, -4%) scale(1.08); }
+  100% { transform: translate(-3%, 3%) scale(1.02); }
+}
 #particle-canvas {
   position: fixed; inset: 0;
   pointer-events: none; z-index: 0;
@@ -234,6 +250,24 @@ body {
   cursor: pointer; transition: color 0.3s; z-index: 2;
 }
 .video-skip:hover { color: var(--cream); }
+.video-loading {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; background: #000;
+  opacity: 1; transition: opacity 0.6s ease; pointer-events: none;
+}
+.video-loading.hidden { opacity: 0; }
+.video-loading-ring {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 2px solid rgba(212,168,83,0.15);
+  border-top-color: var(--gold);
+  animation: vl-spin 0.9s linear infinite;
+}
+.video-loading span {
+  font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 3px; text-transform: uppercase; color: rgba(240,237,232,0.4);
+}
+@keyframes vl-spin { to { transform: rotate(360deg); } }
 
 /* ══════════════════════════════════════════════════
    SCREEN 3 — LOGIN
@@ -960,6 +994,7 @@ outline-offset: 4px;
 <body>
 
 <!-- ══ PARTICLE CANVAS ══════════════════════════════════════════ -->
+<div class="bg-aurora"></div>
 <canvas id="particle-canvas"></canvas>
 
 <!-- ══ BUTTERFLIES ══════════════════════════════════════════════ -->
@@ -1061,9 +1096,13 @@ outline-offset: 4px;
 
 <!-- ══ SCREEN 2 — VIDEO ═══════════════════════════════════════════ -->
 <div id="screen-video" class="screen">
-  <video id="intro-video" playsinline>
+  <video id="intro-video" playsinline preload="auto">
     <source src="Video.mp4" type="video/mp4">
   </video>
+  <div id="video-loading" class="video-loading">
+    <div class="video-loading-ring"></div>
+    <span>Cargando tu invitación…</span>
+  </div>
   <button class="video-skip" id="btn-skip-video">
     Saltar <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i>
   </button>
@@ -1734,17 +1773,34 @@ function blast(cb) {
 /* ══════════════════════════════════════════════════
    SCREEN 1 — ABRIR
 ══════════════════════════════════════════════════ */
+const introVideo = document.getElementById("intro-video");
+const videoLoadingEl = document.getElementById("video-loading");
+introVideo.preload = "auto";
+introVideo.load(); // empieza a descargar el video desde que carga la página, sin que nadie lo note
+
 document.getElementById("btn-abrir").addEventListener("click", async () => {
   if (USE_SUPABASE) { await sbLoadGuests(); }
   blast(() => {
     showScreen("screen-video");
-    const vid = document.getElementById("intro-video");
-    vid.currentTime = 0;
-    vid.muted = false;
-vid.play().catch(() => { vid.muted = true; vid.play().catch(goToLogin); });
+    playIntroVideoWhenReady();
   });
 });
-const introVideo = document.getElementById("intro-video");
+
+function playIntroVideoWhenReady() {
+  introVideo.currentTime = 0;
+  function startPlayback() {
+    videoLoadingEl.classList.add("hidden");
+    introVideo.muted = false;
+    introVideo.play().catch(() => { introVideo.muted = true; introVideo.play().catch(goToLogin); });
+  }
+  if (introVideo.readyState >= 3) {
+    startPlayback(); // ya está suficientemente cargado, reproduce directo
+  } else {
+    videoLoadingEl.classList.remove("hidden");
+    introVideo.addEventListener("canplay", startPlayback, { once: true });
+  }
+}
+
 introVideo.addEventListener("ended", goToLogin);
 introVideo.addEventListener("error", goToLogin);
 document.getElementById("btn-skip-video").addEventListener("click", goToLogin);
