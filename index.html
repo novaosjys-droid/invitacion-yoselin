@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XV Años — Yoselin</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" media="print" onload="this.media='all'"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- GSAP + ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Lenis -->
+  <script src="https://unpkg.com/lenis@1.1.14/dist/lenis.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+/* ══════════════════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:        #0D0F1E;
+  --bg2:       #12162B;
+  --surface:   #1A1F38;
+  --surface2:  #222848;
+  --gold:      #D4A853;
+  --gold-lt:   #F2D78E;
+  --rose:      #E8A0B4;
+  --rose-lt:   #F5C9D7;
+  --cream:     #F0EDE8;
+  --cream-dim: rgba(240,237,232,0.55);
+  --serif:     'Cormorant Garamond', Georgia, serif;
+  --sans:      'DM Sans', system-ui, sans-serif;
+}
+html { scroll-behavior: auto; }
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════════════
+   PARTICLE CANVAS
+══════════════════════════════════════════════════ */
+#particle-canvas {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  opacity: 0.5;
+}
+
+/* ══════════════════════════════════════════════════
+   BUTTERFLIES
+══════════════════════════════════════════════════ */
+.butterfly {
+  position: fixed;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+  filter: drop-shadow(0 0 8px rgba(232,160,180,0.4));
+}
+.butterfly.visible { opacity: 0.65; }
+.butterfly svg { width: 52px; height: 52px; }
+#butterfly-2 svg { width: 38px; height: 38px; }
+.wing {
+  transform-origin: center;
+  animation: flap 0.5s ease-in-out infinite alternate;
+}
+.wing-right {
+  transform-origin: center;
+  animation: flap-r 0.5s ease-in-out infinite alternate;
+}
+#butterfly-2 .wing { animation-duration: 0.38s; }
+#butterfly-2 .wing-right { animation-duration: 0.38s; }
+#bird-1 svg { width: 46px; height: 20px; }
+.bird-wing-l, .bird-wing-r { transform-origin: 50px 20px; animation: bird-flap 0.35s ease-in-out infinite alternate; }
+.bird-wing-r { animation-delay: 0.02s; }
+@keyframes bird-flap {
+  from { transform: scaleY(1); }
+  to   { transform: scaleY(0.4); }
+}
+@keyframes flap   { from { transform: scaleX(1); } to { transform: scaleX(0.35); } }
+@keyframes flap-r { from { transform: scaleX(-1); } to { transform: scaleX(-0.35); } }
+
+/* ══════════════════════════════════════════════════
+   AUDIO BUTTON
+══════════════════════════════════════════════════ */
+#btn-audio {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 50;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(26,31,56,0.8);
+  border: 1px solid rgba(212,168,83,0.3);
+  color: var(--gold);
+  font-size: 13px;
+  cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.3s, color 0.3s, transform 0.3s;
+}
+#btn-audio.visible { display: flex; }
+#btn-audio:hover { border-color: var(--gold); color: var(--gold-lt); transform: scale(1.08); }
+#btn-audio.playing { animation: audio-pulse 2s ease-in-out infinite; }
+@keyframes audio-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(212,168,83,0.35); }
+  50%     { box-shadow: 0 0 0 8px rgba(212,168,83,0); }
+}
+
+/* ══════════════════════════════════════════════════
+   SCREEN SYSTEM
+══════════════════════════════════════════════════ */
+.screen {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 1 — INTRO
+══════════════════════════════════════════════════ */
+#screen-intro { background: var(--bg); flex-direction: column; text-align: center; overflow: hidden; }
+#intro-bg-photo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center 20%;
+  filter: grayscale(1) brightness(0.5) contrast(5);
+  opacity: 0.55;
+}
+#screen-intro::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, rgba(13,15,30,0.35) 0%, rgba(13,15,30,0.88) 75%),
+              linear-gradient(to bottom, rgba(13,15,30,0.55), rgba(13,15,30,0.95));
+  z-index: 1;
+}
+
+.orb-wrapper {
+  position: relative; width: 240px; height: 240px;
+  margin: 0 auto 36px;
+  display: flex; align-items: center; justify-content: center;
+}
+.orb-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(212,168,83,0.18);
+  animation: pulse-ring 3.5s ease-in-out infinite;
+}
+.orb-ring:nth-child(1) { width: 240px; height: 240px; }
+.orb-ring:nth-child(2) { width: 192px; height: 192px; border-color: rgba(212,168,83,0.28); animation-delay: .5s; }
+.orb-ring:nth-child(3) { width: 148px; height: 148px; border-color: rgba(232,160,180,0.35); animation-delay: 1s; }
+.orb-core {
+  position: relative; width: 114px; height: 114px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, rgba(242,215,142,0.18), rgba(212,168,83,0.06));
+  border: 1px solid rgba(212,168,83,0.55);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 60px rgba(212,168,83,0.14), inset 0 0 30px rgba(212,168,83,0.07);
+}
+.orb-xv {
+  font-family: var(--serif); font-size: 44px; font-weight: 300;
+  color: var(--gold-lt); letter-spacing: 5px; line-height: 1;
+}
+@keyframes pulse-ring {
+  0%,100% { transform: scale(1); opacity: 0.5; }
+  50%      { transform: scale(1.05); opacity: 1; }
+}
+.intro-eyebrow {
+  font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 5px; text-transform: uppercase;
+  color: var(--rose); margin-bottom: 12px;
+}
+.intro-name {
+  font-family: var(--serif);
+  font-size: clamp(72px, 18vw, 108px);
+  font-weight: 300; color: var(--cream);
+  letter-spacing: -1px; line-height: 0.92; margin-bottom: 18px;
+}
+.intro-date {
+  font-family: var(--sans); font-size: 12px; font-weight: 300;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--cream-dim); margin-bottom: 52px;
+}
+.btn-open {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 40px;
+  border: 1px solid rgba(212,168,83,0.45);
+  background: transparent; color: var(--gold-lt);
+  font-family: var(--sans); font-size: 12px; font-weight: 400;
+  letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; border-radius: 2px;
+  transition: background 0.35s, border-color 0.35s, box-shadow 0.35s, transform 0.35s;
+}
+.btn-open:hover {
+  background: rgba(212,168,83,0.1);
+  border-color: var(--gold);
+  box-shadow: 0 0 28px rgba(212,168,83,0.18);
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════════
+   BLAST OVERLAY
+══════════════════════════════════════════════════ */
+#blast-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(circle at center, #F5C9D7, #E8A0B4 30%, #D4A853 60%, #0D0F1E);
+  opacity: 0; pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════
+   SCREEN 2 — VIDEO
+══════════════════════════════════════════════════ */
+#screen-video { background: #000; z-index: 11; }
+#screen-video video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.video-skip {
+  position: absolute; bottom: 32px; right: 24px;
+  font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(240,237,232,0.35); background: none; border: none;
+  cursor: pointer; transition: color 0.3s; z-index: 2;
+}
+.video-skip:hover { color: var(--cream); }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 3 — LOGIN
+══════════════════════════════════════════════════ */
+#screen-login { background: var(--bg); }
+.login-card {
+  background: var(--surface);
+  border: 1px solid rgba(212,168,83,0.18);
+  border-radius: 6px; padding: 48px 40px;
+  width: min(380px, 92vw); text-align: center;
+  box-shadow: 0 16px 80px rgba(0,0,0,0.5);
+}
+.login-crown { font-size: 38px; color: var(--gold); margin-bottom: 22px; }
+.login-title {
+  font-family: var(--serif); font-size: 30px; font-weight: 400;
+  color: var(--cream); margin-bottom: 6px;
+}
+.login-sub {
+  font-family: var(--sans); font-size: 11px; font-weight: 300;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--cream-dim); margin-bottom: 28px;
+}
+.login-input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid rgba(212,168,83,0.2); border-radius: 3px;
+  padding: 14px 16px; color: var(--cream);
+  font-family: var(--sans); font-size: 15px; text-align: center;
+  outline: none; transition: border-color 0.3s; margin-bottom: 12px;
+}
+.login-input:focus { border-color: rgba(212,168,83,0.6); }
+.login-input::placeholder { color: rgba(240,237,232,0.28); }
+.btn-enter {
+  width: 100%; padding: 14px;
+  background: rgba(212,168,83,0.14);
+  border: 1px solid rgba(212,168,83,0.4); border-radius: 3px;
+  color: var(--gold-lt); font-family: var(--sans);
+  font-size: 11px; font-weight: 500; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s; margin-bottom: 20px;
+}
+.btn-enter:hover { background: rgba(212,168,83,0.22); box-shadow: 0 0 24px rgba(212,168,83,0.14); }
+/* Status badge shown after looking up guest */
+.guest-status-badge {
+  display: none; padding: 8px 14px; border-radius: 20px;
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px;
+}
+.gsb-confirmed { background: rgba(76,168,102,0.12); color: #6FC98A; border: 1px solid rgba(76,168,102,0.25); }
+.gsb-pending   { background: rgba(212,168,83,0.1);  color: var(--gold-lt); border: 1px solid rgba(212,168,83,0.25); }
+.gsb-declined  { background: rgba(232,100,100,0.1); color: #E08080; border: 1px solid rgba(232,100,100,0.2); }
+.gsb-unknown   { background: rgba(240,237,232,0.07); color: var(--cream-dim); border: 1px solid rgba(240,237,232,0.12); }
+.login-mama-link {
+  display: block; font-family: var(--sans); font-size: 11px;
+  font-weight: 300; color: rgba(240,237,232,0.22);
+  cursor: pointer; background: none; border: none;
+  transition: color 0.3s;
+}
+.login-mama-link:hover { color: rgba(240,237,232,0.5); }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 4 — CARTA (normal page flow)
+══════════════════════════════════════════════════ */
+#screen-carta { display: none; background: var(--bg); }
+
+/* ══════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════ */
+.hero {
+  position: relative; min-height: 100svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; overflow: hidden; padding: 40px 24px;
+}
+#hero-bg-photo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center 22%;
+  filter: grayscale(1) brightness(0.48) contrast(1.05);
+  opacity: 0.5; z-index: 0;
+  transform: scale(1.08);
+}
+.hero-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 60%,
+    rgba(232,160,180,0.16) 0%, rgba(212,168,83,0.1) 40%, transparent 70%),
+    linear-gradient(to bottom, rgba(13,15,30,0.5), rgba(13,15,30,0.75) 60%, var(--bg) 100%);
+  pointer-events: none; z-index: 1;
+}
+.hero-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1; }
+.hero-ring {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(212,168,83,0.08);
+}
+.hero-ring:nth-child(1) { width: 94vmax; height: 94vmax; }
+.hero-ring:nth-child(2) { width: 72vmax; height: 72vmax; border-color: rgba(232,160,180,0.1); }
+.hero-ring:nth-child(3) { width: 52vmax; height: 52vmax; border-color: rgba(212,168,83,0.14); }
+.hero-ring:nth-child(4) { width: 34vmax; height: 34vmax; border-color: rgba(232,160,180,0.18); }
+.hero-eyebrow {
+  position: relative; z-index: 2; font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 5px; text-transform: uppercase; color: var(--rose); margin-bottom: 22px; opacity: 0;
+}
+.hero-name {
+  position: relative; z-index: 2;
+  font-family: var(--serif);
+  font-size: clamp(88px, 24vw, 172px);
+  font-weight: 300; color: var(--cream);
+  letter-spacing: -2px; line-height: 0.88; margin-bottom: 30px; opacity: 0;
+  text-shadow: 0 8px 60px rgba(0,0,0,0.5);
+}
+.hero-divider {
+  position: relative; z-index: 2; width: 1px; height: 52px;
+  background: linear-gradient(to bottom, transparent, var(--gold), var(--rose), transparent);
+  margin: 0 auto 30px; opacity: 0;
+}
+.hero-subtitle {
+  position: relative; z-index: 2; font-family: var(--serif); font-size: 22px;
+  font-weight: 300; font-style: italic; color: var(--cream-dim); margin-bottom: 18px; opacity: 0;
+}
+.hero-date-chip {
+  position: relative; z-index: 2; display: inline-block;
+  font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 4px; text-transform: uppercase; color: var(--gold);
+  border: 1px solid rgba(212,168,83,0.35); padding: 7px 22px; border-radius: 2px; opacity: 0;
+  background: rgba(13,15,30,0.3); backdrop-filter: blur(4px);
+}
+.scroll-hint {
+  position: absolute; z-index: 2; bottom: 34px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0;
+}
+.scroll-hint span {
+  font-family: var(--sans); font-size: 9px; font-weight: 300;
+  letter-spacing: 4px; text-transform: uppercase; color: rgba(240,237,232,0.3);
+}
+.scroll-line {
+  width: 1px; height: 36px;
+  background: linear-gradient(to bottom, rgba(212,168,83,0.7), transparent);
+  animation: scroll-drop 2.2s ease-in-out infinite;
+}
+@keyframes scroll-drop {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+/* ══════════════════════════════════════════════════
+   CARTA GENERAL
+══════════════════════════════════════════════════ */
+.carta-section {
+  position: relative; padding: 46px 28px;
+  max-width: 620px; margin: 0 auto;
+}
+.section-eyebrow {
+  font-family: var(--sans); font-size: 9px; font-weight: 300;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--rose); margin-bottom: 12px; opacity: 0;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: clamp(36px, 8.5vw, 54px);
+  font-weight: 300; color: var(--cream); line-height: 1.05;
+  margin-bottom: 18px; opacity: 0;
+}
+.section-body {
+  font-family: var(--sans); font-size: 15px; font-weight: 300;
+  color: var(--cream-dim); line-height: 1.8; opacity: 0;
+}
+
+/* Greeting name */
+.greeting-name {
+  font-family: var(--serif);
+  font-size: clamp(44px, 11vw, 68px);
+  font-weight: 300; font-style: italic; color: var(--gold-lt);
+  display: block; margin-top: 4px;
+}
+
+/* ══════════════════════════════════════════════════
+   JOURNEY OF YEARS
+══════════════════════════════════════════════════ */
+.journey-section {
+  padding: 20px 0 0;
+  position: relative;
+}
+.journey-chapter {
+  min-height: 72svh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 28px; text-align: center;
+  position: relative; overflow: hidden;
+}
+.chapter-year {
+  font-family: var(--serif);
+  font-size: clamp(120px, 35vw, 240px);
+  font-weight: 300; line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(212,168,83,0.12);
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; white-space: nowrap; user-select: none;
+}
+.chapter-tag {
+  font-family: var(--sans); font-size: 9px; font-weight: 300;
+  letter-spacing: 5px; text-transform: uppercase; color: var(--rose);
+  margin-bottom: 16px; position: relative; opacity: 0;
+}
+.chapter-title {
+  font-family: var(--serif); font-size: clamp(38px, 9vw, 58px);
+  font-weight: 300; color: var(--cream); line-height: 1.08;
+  margin-bottom: 18px; position: relative; opacity: 0;
+}
+.chapter-body {
+  font-family: var(--sans); font-size: 15px; font-weight: 300;
+  color: var(--cream-dim); line-height: 1.82; max-width: 440px;
+  position: relative; opacity: 0;
+}
+/* Photo placeholder for chapters */
+.chapter-photo {
+  width: min(240px, 70vw); height: min(300px, 88vw);
+  border-radius: 2px;
+background: #F3EEE4;
+border: 3px double var(--gold);
+outline: 1px solid rgba(212,168,83,0.3);
+outline-offset: 4px;
+  padding: 12px 12px 30px 12px;
+  box-sizing: content-box;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: rgba(212,168,83,0.22); margin-bottom: 40px;
+  position: relative; opacity: 0;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+.journey-chapter:nth-of-type(odd) .chapter-photo { transform: rotate(-4deg); }
+.journey-chapter:nth-of-type(even) .chapter-photo { transform: rotate(4deg); }
+.chapter-photo:hover { transform: rotate(0deg) scale(1.04) translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+.chapter-photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: absolute; top: 12px; left: 12px; right: 12px; bottom: 30px;
+  border-radius: 1px;
+}
+
+.chapter-photo:hover { transform: scale(1.02) translateY(-4px); box-shadow: 0 16px 50px rgba(0,0,0,0.4); }
+.chapter-photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0; border-radius: 4px;
+  transition: transform 0.6s ease;
+}
+.chapter-photo:hover img { transform: scale(1.06); }
+
+.chapter-photo i { font-size: 28px; }
+.chapter-photo span {
+  font-family: var(--sans); font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: rgba(212,168,83,0.18); text-align: center; padding: 0 16px;
+}
+.chapter-divider {
+  width: 40px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), var(--rose), transparent);
+  margin: 20px auto 0; position: relative; opacity: 0;
+}
+
+/* Journey connector dots */
+.journey-connector {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0; gap: 6px;
+}
+.jc-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(212,168,83,0.25); }
+.jc-dot:nth-child(2) { background: rgba(212,168,83,0.4); width: 5px; height: 5px; }
+
+/* ══════════════════════════════════════════════════
+   ROSE EXPLOSION SECTION
+══════════════════════════════════════════════════ */
+.rose-explosion-section {
+  position: relative; padding: 60px 28px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 68svh; overflow: hidden;
+  text-align: center;
+}
+#rose-canvas {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 0;
+}
+.rose-content {
+  position: relative; z-index: 1;
+  opacity: 0; transform: scale(0.9); filter: blur(8px);
+  transition: opacity 1.8s ease, transform 1.8s ease, filter 1.8s ease;
+}
+.rose-content.revealed { opacity: 1; transform: scale(1); filter: blur(0px); }
+/* ─── PHOTO FRAME ─── */
+.rose-photo-frame {
+  width: min(260px, 78vw);
+  height: min(340px, 100vw);
+  border-radius: 4px;
+  margin: 0 auto 32px;
+  position: relative; overflow: hidden;
+  border: 3px double var(--rose);
+outline: 1px solid rgba(232,160,180,0.3);
+outline-offset: 4px;
+  box-shadow:
+    0 0 0 6px rgba(212,168,83,0.06),
+    0 20px 60px rgba(0,0,0,0.5);
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.5s ease;
+}
+.rose-photo-frame:hover { transform: scale(1.02); }
+.rose-photo-frame img {
+  width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0;
+}
+/* ─── REPLACE src BELOW WITH FOTO REAL DE YOSELIN ─── */
+.rose-photo-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; color: rgba(212,168,83,0.25);
+}
+.rose-photo-placeholder i { font-size: 36px; }
+.rose-photo-placeholder span {
+  font-family: var(--sans); font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: rgba(212,168,83,0.18);
+}
+.rose-message-title {
+  font-family: var(--serif); font-size: clamp(28px, 7vw, 40px);
+  font-weight: 300; color: var(--cream); margin-bottom: 18px; line-height: 1.2;
+}
+.rose-message-body {
+  font-family: var(--serif); font-size: 17px; font-weight: 300;
+  font-style: italic; color: var(--cream-dim); line-height: 1.8;
+  max-width: 400px; margin: 0 auto 28px;
+}
+.rose-sig {
+  font-family: var(--sans); font-size: 10px; font-weight: 300;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--rose);
+}
+
+/* ══════════════════════════════════════════════════
+   INFO CARD
+══════════════════════════════════════════════════ */
+.info-card {
+  background: var(--surface); border: 1px solid rgba(212,168,83,0.12);
+  border-radius: 4px; padding: 32px;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.3);
+  transition: box-shadow 0.4s, transform 0.4s; opacity: 0;
+}
+.info-card:hover { box-shadow: 0 8px 60px rgba(212,168,83,0.1); transform: translateY(-3px); }
+.info-row {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 16px 0; border-bottom: 1px solid rgba(212,168,83,0.07);
+  transition: padding-left 0.3s ease;
+}
+.info-row:hover { padding-left: 4px; }
+.info-row:last-child { border-bottom: none; }
+.info-icon { width: 32px; flex-shrink: 0; color: var(--gold); font-size: 15px; padding-top: 2px; text-align: center; }
+.info-label {
+  font-family: var(--sans); font-size: 9px; font-weight: 400;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--rose); margin-bottom: 4px;
+}
+.info-value { font-family: var(--serif); font-size: 18px; font-weight: 400; color: var(--cream); line-height: 1.3; }
+
+/* ══════════════════════════════════════════════════
+   DRESS CODE
+══════════════════════════════════════════════════ */
+.dress-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-top: 22px; opacity: 0;
+}
+.dress-card {
+  background: var(--surface); border: 1px solid rgba(212,168,83,0.1);
+  border-radius: 4px; padding: 24px 18px; text-align: center;
+  transition: transform 0.35s ease, border-color 0.35s ease;
+}
+.dress-card:hover { transform: translateY(-4px); border-color: rgba(212,168,83,0.3); }
+.dress-card i { font-size: 26px; color: var(--rose); margin-bottom: 12px; display: block; }
+.dress-card h4 { font-family: var(--serif); font-size: 17px; font-weight: 400; color: var(--cream); margin-bottom: 8px; }
+.dress-card p { font-family: var(--sans); font-size: 12px; font-weight: 300; color: var(--cream-dim); line-height: 1.6; }
+.dress-alert {
+  margin-top: 14px; padding: 12px 16px;
+  background: rgba(212,168,83,0.07); border: 1px solid rgba(212,168,83,0.2);
+  border-radius: 3px; display: flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 12px; font-weight: 300;
+  color: var(--gold-lt); opacity: 0;
+}
+.dress-alert i { color: var(--gold); flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════
+   GIFT
+══════════════════════════════════════════════════ */
+.gift-display {
+  text-align: center; padding: 32px 24px; opacity: 0;
+}
+.envelope-big {
+  font-size: 68px; color: var(--gold); margin-bottom: 22px;
+  display: block; animation: float-env 4.5s ease-in-out infinite;
+}
+@keyframes float-env {
+  0%,100% { transform: translateY(0) rotate(-4deg); }
+  50%     { transform: translateY(-12px) rotate(4deg); }
+}
+.gift-text { font-family: var(--serif); font-size: 24px; font-weight: 300; font-style: italic; color: var(--cream); }
+.gift-sub { font-family: var(--sans); font-size: 12px; font-weight: 300; color: var(--cream-dim); margin-top: 8px; letter-spacing: 1px; }
+
+/* ══════════════════════════════════════════════════
+   TIMELINE
+══════════════════════════════════════════════════ */
+.timeline { position: relative; padding-left: 32px; opacity: 0; }
+.timeline::before {
+  content: ''; position: absolute; left: 10px; top: 8px; bottom: 8px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--gold) 20%, var(--rose) 80%, transparent);
+  opacity: 0.25;
+}
+.tl-item { position: relative; padding: 0 0 30px 24px; cursor: default; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot {
+  position: absolute; left: -22px; top: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--gold); background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.tl-item:hover .tl-dot { background: rgba(212,168,83,0.25); box-shadow: 0 0 14px rgba(212,168,83,0.45); }
+.tl-dot-inner { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); transition: transform 0.3s; }
+.tl-item:hover .tl-dot-inner { transform: scale(1.5); }
+.tl-time { font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.tl-event { font-family: var(--serif); font-size: 21px; font-weight: 400; color: var(--cream); line-height: 1.2; }
+.tl-desc { font-family: var(--sans); font-size: 12px; font-weight: 300; color: var(--cream-dim); margin-top: 4px; }
+
+/* ══════════════════════════════════════════════════
+   MAMA MESSAGE
+══════════════════════════════════════════════════ */
+.mama-card {
+  background: var(--surface); border: 1px solid rgba(232,160,180,0.18);
+  border-radius: 4px; padding: 40px 32px; position: relative;
+  box-shadow: 0 4px 60px rgba(0,0,0,0.35); opacity: 0;
+}
+.mama-card::before {
+  content: '\201C'; position: absolute; top: -8px; left: 28px;
+  font-family: var(--serif); font-size: 88px; color: var(--rose);
+  opacity: 0.18; line-height: 1;
+}
+.mama-text {
+  font-family: var(--serif); font-size: clamp(18px, 4.5vw, 23px);
+  font-weight: 300; font-style: italic; color: var(--cream);
+  line-height: 1.72; margin-bottom: 26px; position: relative;
+}
+.mama-signature { display: flex; align-items: center; gap: 14px; }
+.mama-sig-line { flex: 1; height: 1px; background: rgba(232,160,180,0.2); }
+.mama-sig-text { font-family: var(--sans); font-size: 11px; font-weight: 300; color: var(--rose); text-align: right; line-height: 1.5; }
+.mama-sig-name { font-family: var(--serif); font-size: 16px; font-weight: 400; color: var(--gold-lt); }
+
+/* ══════════════════════════════════════════════════
+   RSVP
+══════════════════════════════════════════════════ */
+.rsvp-section {
+  text-align: center; padding: 56px 28px; opacity: 0;
+}
+.rsvp-subtitle {
+  font-family: var(--serif); font-size: 18px; font-weight: 300;
+  font-style: italic; color: var(--cream-dim); margin-bottom: 36px;
+}
+.rsvp-buttons { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.btn-rsvp-confirm {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 16px 48px;
+  background: rgba(232,160,180,0.12);
+  border: 1px solid rgba(232,160,180,0.4);
+  border-radius: 2px; color: var(--rose-lt);
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 3px; text-transform: uppercase;
+  cursor: pointer; transition: background 0.35s, box-shadow 0.35s, transform 0.35s;
+}
+.btn-rsvp-confirm:hover { background: rgba(232,160,180,0.22); box-shadow: 0 0 40px rgba(232,160,180,0.15); transform: translateY(-2px); }
+.btn-rsvp-decline {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 24px; background: transparent;
+  border: 1px solid rgba(240,237,232,0.12); border-radius: 2px;
+  color: rgba(240,237,232,0.35); font-family: var(--sans);
+  font-size: 10px; font-weight: 300; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer; transition: border-color 0.3s, color 0.3s;
+}
+.btn-rsvp-decline:hover { border-color: rgba(240,237,232,0.3); color: var(--cream-dim); }
+.rsvp-current-status {
+  margin-top: 20px; font-family: var(--sans); font-size: 11px;
+  letter-spacing: 1px; color: var(--cream-dim); opacity: 0;
+}
+
+/* RSVP modals */
+.rsvp-modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(13,15,30,0.94); display: none;
+  align-items: center; justify-content: center; padding: 28px;
+}
+.rsvp-modal-overlay.open { display: flex; }
+.rsvp-modal-box {
+  background: var(--surface); border: 1px solid rgba(232,160,180,0.2);
+  border-radius: 6px; padding: 48px 36px;
+  width: min(400px, 94vw); text-align: center; position: relative;
+  animation: modal-rise 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes modal-rise { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+.rsvp-modal-icon { font-size: 40px; margin-bottom: 22px; }
+.rsvp-modal-title { font-family: var(--serif); font-size: 30px; font-weight: 300; color: var(--cream); margin-bottom: 10px; }
+.rsvp-modal-sub { font-family: var(--sans); font-size: 13px; font-weight: 300; color: var(--cream-dim); line-height: 1.7; margin-bottom: 28px; }
+.btn-modal-close {
+  display: inline-block; font-family: var(--sans); font-size: 9px; font-weight: 300;
+  letter-spacing: 3px; text-transform: uppercase; color: rgba(240,237,232,0.25);
+  background: none; border: none; cursor: pointer; transition: color 0.3s;
+}
+.btn-modal-close:hover { color: var(--cream-dim); }
+.btn-whatsapp {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px; background: rgba(37,211,102,0.12);
+  border: 1px solid rgba(37,211,102,0.35); border-radius: 3px;
+  color: #5DE88A; font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  text-decoration: none; transition: background 0.3s;
+  margin-bottom: 16px; width: 100%; justify-content: center;
+}
+.btn-whatsapp:hover { background: rgba(37,211,102,0.2); }
+.rsvp-current-status {
+  margin-top: 20px; font-family: var(--sans); font-size: 11px;
+  letter-spacing: 1px; color: var(--cream-dim); opacity: 0;
+}
+
+/* ▼ AGREGAR AQUÍ */
+.rsvp-family-list {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 20px 0; text-align: left;
+}
+.rsvp-check-row {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,168,83,0.15);
+  border-radius: 12px; padding: 14px 18px;
+  cursor: pointer; transition: background 0.2s;
+}
+.rsvp-check-row:hover { background: rgba(212,168,83,0.06); }
+.rsvp-checkbox { width: 20px; height: 20px; accent-color: var(--gold); }
+
+/* Editar estado desde admin */
+.status-select {
+  background: var(--surface2); border: 1px solid rgba(212,168,83,0.2);
+  border-radius: 3px; padding: 4px 8px; color: var(--cream);
+  font-family: var(--sans); font-size: 11px; cursor: pointer; outline: none;
+}
+/* ══════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════ */
+.carta-footer {
+  border-top: 1px solid rgba(212,168,83,0.08);
+  padding: 44px 28px; text-align: center; opacity: 0;
+}
+.footer-name { font-family: var(--serif); font-size: 30px; font-weight: 300; color: var(--cream); margin-bottom: 10px; }
+.footer-date { font-family: var(--sans); font-size: 10px; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+.footer-place { font-family: var(--sans); font-size: 11px; font-weight: 300; color: var(--cream-dim); }
+.footer-xv { margin-top: 26px; font-family: var(--serif); font-size: 13px; font-weight: 300; letter-spacing: 7px; text-transform: uppercase; color: rgba(212,168,83,0.28); }
+
+/* ══════════════════════════════════════════════════
+   FLOATING LOCK
+══════════════════════════════════════════════════ */
+#btn-admin-float {
+  position: fixed; bottom: 24px; right: 24px; z-index: 400;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(26,31,56,0.9); border: 1px solid rgba(212,168,83,0.18);
+  color: rgba(212,168,83,0.35); font-size: 14px; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); transition: color 0.3s, border-color 0.3s;
+}
+#btn-admin-float.visible { display: flex; }
+#btn-admin-float:hover { color: var(--gold); border-color: rgba(212,168,83,0.5); }
+
+/* ══════════════════════════════════════════════════
+   ADMIN LOGIN
+══════════════════════════════════════════════════ */
+#admin-login-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(13,15,30,0.96);
+  display: none; align-items: center; justify-content: center;
+}
+#admin-login-overlay.open { display: flex; }
+.admin-login-box {
+  background: var(--surface); border: 1px solid rgba(212,168,83,0.18);
+  border-radius: 6px; padding: 42px 32px;
+  width: min(340px, 92vw); text-align: center;
+}
+.admin-login-box h3 { font-family: var(--serif); font-size: 24px; font-weight: 300; color: var(--cream); margin-bottom: 24px; }
+.admin-login-box input {
+  width: 100%; background: var(--surface2);
+  border: 1px solid rgba(212,168,83,0.2); border-radius: 3px;
+  padding: 12px 14px; color: var(--cream); font-family: var(--sans);
+  font-size: 14px; text-align: center; outline: none;
+  margin-bottom: 10px; letter-spacing: 4px;
+}
+.admin-login-box input::placeholder { letter-spacing: 1px; color: rgba(240,237,232,0.22); }
+.admin-login-err { font-family: var(--sans); font-size: 11px; color: #E08080; margin-bottom: 8px; min-height: 16px; }
+.btn-admin-enter {
+  width: 100%; padding: 12px;
+  background: rgba(212,168,83,0.12); border: 1px solid rgba(212,168,83,0.3);
+  border-radius: 3px; color: var(--gold-lt); font-family: var(--sans);
+  font-size: 10px; font-weight: 500; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer; transition: background 0.3s; margin-bottom: 10px;
+}
+.btn-admin-enter:hover { background: rgba(212,168,83,0.2); }
+.btn-admin-cancel { background: none; border: none; color: rgba(240,237,232,0.2); font-family: var(--sans); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: color 0.3s; }
+.btn-admin-cancel:hover { color: var(--cream-dim); }
+
+/* ══════════════════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════════════════ */
+#screen-admin {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(13,15,30,0.97);
+  display: none; overflow-y: auto; padding: 32px 16px;
+}
+#screen-admin.open { display: block; }
+.admin-header {
+  max-width: 580px; margin: 0 auto 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-title { font-family: var(--serif); font-size: 26px; font-weight: 300; color: var(--cream); }
+.admin-sync-note { font-family: var(--sans); font-size: 9px; letter-spacing: 1px; color: var(--cream-dim); margin-top: 4px; }
+.admin-close { background: none; border: none; color: var(--cream-dim); font-size: 18px; cursor: pointer; transition: color 0.3s; }
+.admin-close:hover { color: var(--cream); }
+.admin-stats {
+  max-width: 580px; margin: 0 auto 22px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.stat-box {
+  background: var(--surface); border: 1px solid rgba(212,168,83,0.1);
+  border-radius: 4px; padding: 20px 16px; text-align: center;
+}
+.stat-num { font-family: var(--serif); font-size: 38px; font-weight: 300; color: var(--gold-lt); line-height: 1; margin-bottom: 6px; }
+.stat-label { font-family: var(--sans); font-size: 9px; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: var(--cream-dim); }
+
+/* Add guest form */
+.add-guest-form {
+  max-width: 580px; margin: 0 auto 18px;
+  background: var(--surface); border: 1px solid rgba(232,160,180,0.15);
+  border-radius: 4px; padding: 20px 18px;
+}
+.add-guest-form h4 {
+  font-family: var(--sans); font-size: 10px; font-weight: 400;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--rose);
+  margin-bottom: 14px;
+}
+.add-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-form-input {
+  flex: 1; min-width: 130px; background: var(--surface2);
+  border: 1px solid rgba(212,168,83,0.15); border-radius: 3px;
+  padding: 10px 12px; color: var(--cream); font-family: var(--sans);
+  font-size: 13px; outline: none; transition: border-color 0.3s;
+}
+.add-form-input:focus { border-color: rgba(212,168,83,0.4); }
+.add-form-input::placeholder { color: rgba(240,237,232,0.22); }
+.add-form-select {
+  background: var(--surface2); border: 1px solid rgba(212,168,83,0.15);
+  border-radius: 3px; padding: 10px 12px; color: var(--cream);
+  font-family: var(--sans); font-size: 13px; outline: none; cursor: pointer;
+}
+.add-form-select option { background: var(--surface2); }
+.btn-add-guest {
+  padding: 10px 20px; background: rgba(232,160,180,0.12);
+  border: 1px solid rgba(232,160,180,0.3); border-radius: 3px;
+  color: var(--rose-lt); font-family: var(--sans); font-size: 10px;
+  font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: background 0.3s; white-space: nowrap;
+}
+.btn-add-guest:hover { background: rgba(232,160,180,0.22); }
+
+.admin-controls {
+  max-width: 580px; margin: 0 auto 12px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 14px; border-radius: 2px;
+  border: 1px solid rgba(212,168,83,0.15); background: transparent;
+  color: var(--cream-dim); font-family: var(--sans); font-size: 10px;
+  font-weight: 300; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: border-color 0.3s, color 0.3s, background 0.3s;
+}
+.filter-btn.active, .filter-btn:hover {
+  border-color: rgba(212,168,83,0.5); color: var(--gold-lt);
+  background: rgba(212,168,83,0.07);
+}
+.admin-search { max-width: 580px; margin: 0 auto 18px; }
+.admin-search input {
+  width: 100%; background: var(--surface);
+  border: 1px solid rgba(212,168,83,0.15); border-radius: 3px;
+  padding: 10px 14px; color: var(--cream); font-family: var(--sans);
+  font-size: 13px; outline: none; transition: border-color 0.3s;
+}
+.admin-search input:focus { border-color: rgba(212,168,83,0.4); }
+.admin-search input::placeholder { color: rgba(240,237,232,0.2); }
+.guest-list { max-width: 580px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; padding-bottom: 40px; }
+.guest-row {
+  background: var(--surface); border: 1px solid rgba(212,168,83,0.08);
+  border-radius: 3px; padding: 12px 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  transition: border-color 0.3s;
+}
+.guest-row.highlighted { border-color: rgba(212,168,83,0.4); box-shadow: 0 0 16px rgba(212,168,83,0.1); }
+.guest-name { font-family: var(--sans); font-size: 14px; font-weight: 300; color: var(--cream); flex: 1; }
+.badge {
+  padding: 3px 10px; border-radius: 20px;
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; flex-shrink: 0;
+}
+.badge-confirmed { background: rgba(76,168,102,0.12); color: #6FC98A; border: 1px solid rgba(76,168,102,0.25); }
+.badge-pending   { background: rgba(212,168,83,0.1);  color: var(--gold-lt); border: 1px solid rgba(212,168,83,0.25); }
+.badge-declined  { background: rgba(232,100,100,0.1); color: #E08080; border: 1px solid rgba(232,100,100,0.2); }
+.btn-delete-guest {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(232,100,100,0.08); border: 1px solid rgba(232,100,100,0.15);
+  color: rgba(224,128,128,0.6); font-size: 11px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.25s, color 0.25s;
+}
+.btn-delete-guest:hover { background: rgba(232,100,100,0.2); color: #E08080; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+  </style>
+</head>
+<body>
+
+<!-- ══ PARTICLE CANVAS ══════════════════════════════════════════ -->
+<canvas id="particle-canvas"></canvas>
+
+<!-- ══ BUTTERFLIES ══════════════════════════════════════════════ -->
+<div id="butterfly-1" class="butterfly">
+  <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+    <g class="wing">
+      <ellipse cx="22" cy="22" rx="20" ry="16" fill="rgba(232,160,180,0.45)" />
+      <ellipse cx="20" cy="38" rx="14" ry="11" fill="rgba(212,168,83,0.35)" />
+    </g>
+    <g class="wing-right" style="transform-origin:40px 30px">
+      <ellipse cx="58" cy="22" rx="20" ry="16" fill="rgba(232,160,180,0.45)" />
+      <ellipse cx="60" cy="38" rx="14" ry="11" fill="rgba(212,168,83,0.35)" />
+    </g>
+    <ellipse cx="40" cy="30" rx="3" ry="14" fill="rgba(242,215,142,0.7)" />
+    <line x1="40" y1="16" x2="30" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="29" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+    <line x1="40" y1="16" x2="50" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="51" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+  </svg>
+</div>
+<div id="butterfly-2" class="butterfly">
+  <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+    <g class="wing">
+      <ellipse cx="22" cy="22" rx="20" ry="16" fill="rgba(212,168,83,0.5)" />
+      <ellipse cx="20" cy="38" rx="14" ry="11" fill="rgba(232,160,180,0.4)" />
+    </g>
+    <g class="wing-right" style="transform-origin:40px 30px">
+      <ellipse cx="58" cy="22" rx="20" ry="16" fill="rgba(212,168,83,0.5)" />
+      <ellipse cx="60" cy="38" rx="14" ry="11" fill="rgba(232,160,180,0.4)" />
+    </g>
+    <ellipse cx="40" cy="30" rx="3" ry="14" fill="rgba(242,215,142,0.7)" />
+    <line x1="40" y1="16" x2="30" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="29" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+    <line x1="40" y1="16" x2="50" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="51" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+  </svg>
+</div>
+<div id="butterfly-3" class="butterfly">
+  <svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+    <g class="wing">
+      <ellipse cx="22" cy="22" rx="20" ry="16" fill="rgba(242,215,142,0.5)" />
+      <ellipse cx="20" cy="38" rx="14" ry="11" fill="rgba(232,160,180,0.4)" />
+    </g>
+    <g class="wing-right" style="transform-origin:40px 30px">
+      <ellipse cx="58" cy="22" rx="20" ry="16" fill="rgba(242,215,142,0.5)" />
+      <ellipse cx="60" cy="38" rx="14" ry="11" fill="rgba(232,160,180,0.4)" />
+    </g>
+    <ellipse cx="40" cy="30" rx="3" ry="14" fill="rgba(212,168,83,0.7)" />
+    <line x1="40" y1="16" x2="30" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="29" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+    <line x1="40" y1="16" x2="50" y2="6" stroke="rgba(242,215,142,0.5)" stroke-width="1"/>
+    <circle cx="51" cy="5" r="2" fill="rgba(212,168,83,0.7)"/>
+  </svg>
+</div>
+<div id="bird-1" class="butterfly">
+  <svg viewBox="0 0 100 40" xmlns="http://www.w3.org/2000/svg">
+    <path class="bird-wing-l" d="M50 20 Q30 2 4 12 Q28 16 50 20" fill="rgba(240,237,232,0.55)"/>
+    <path class="bird-wing-r" d="M50 20 Q70 2 96 12 Q72 16 50 20" fill="rgba(240,237,232,0.55)"/>
+    <ellipse cx="50" cy="20" rx="6" ry="3" fill="rgba(212,168,83,0.6)"/>
+  </svg>
+</div>
+<!-- ══ AUDIO ═════════════════════════════════════════════════════ -->
+<!--
+  Para agregar audio: reemplaza "musica.mp3" con el nombre de tu archivo de audio
+  y colócalo en la misma carpeta que este HTML.
+-->
+<audio id="bg-audio" loop>
+  <source src="musica.mp3" type="audio/mpeg">
+</audio>
+<button id="btn-audio" title="Música">
+  <i class="fa-solid fa-music" id="audio-icon"></i>
+</button>
+
+<!-- ══ BLAST ══════════════════════════════════════════════════════ -->
+<div id="blast-overlay"></div>
+
+<!-- ══ SCREEN 1 — INTRO ══════════════════════════════════════════ -->
+<div id="screen-intro" class="screen active">
+  <!-- REEMPLAZAR src: foto principal de Yoselin (queda oscurecida y en blanco y negro automáticamente) -->
+<img id="intro-bg-photo" src="fotos/yoselin-hero.jpg" alt="" onerror="this.style.display='none'">
+  <div style="text-align:center;padding:28px;position:relative;z-index:2;">
+    <div class="orb-wrapper">
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+      <div class="orb-ring"></div>
+      <div class="orb-core">
+        <span class="orb-xv">XV</span>
+      </div>
+    </div>
+    <p class="intro-eyebrow">Una noche memorable te espera</p>
+    <h1 class="intro-name">Yoselin</h1>
+    <p class="intro-date">Sábado 29 de Agosto · 7:00 PM</p>
+    <button class="btn-open" id="btn-abrir">
+      <i class="fa-regular fa-envelope"></i>
+      Abrir Invitación
+    </button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 2 — VIDEO ═══════════════════════════════════════════ -->
+<div id="screen-video" class="screen">
+  <video id="intro-video" playsinline>
+    <source src="Video.mp4" type="video/mp4">
+  </video>
+  <button class="video-skip" id="btn-skip-video">
+    Saltar <i class="fa-solid fa-chevron-right" style="font-size:9px;"></i>
+  </button>
+</div>
+
+<!-- ══ SCREEN 3 — LOGIN ═══════════════════════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="login-card">
+    <div class="login-crown"><i class="fa-solid fa-crown"></i></div>
+    <h2 class="login-title">Bienvenida</h2>
+    <p class="login-sub">¿Quién tiene el honor de asistir?</p>
+    <input type="text" id="guest-name-input" class="login-input"
+      placeholder="Escribe tu nombre completo" autocomplete="off" maxlength="50">
+    <div id="guest-status-badge" class="guest-status-badge"></div>
+    <button class="btn-enter" id="btn-enter">Entrar</button>
+    <button class="login-mama-link" id="btn-mama-link">¿Eres la mamá? Ingresa aquí</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN 4 — CARTA ═══════════════════════════════════════════ -->
+<div id="screen-carta">
+
+  <!-- HERO -->
+  <section class="hero">
+    <!-- REEMPLAZAR src: misma foto o una foto alterna de Yoselin -->
+<img id="hero-bg-photo" src="fotos/yoselin-hero.jpg" alt="" onerror="this.style.display='none'">
+    <div class="hero-glow"></div>
+    <div class="hero-rings">
+      <div class="hero-ring"></div>
+      <div class="hero-ring"></div>
+      <div class="hero-ring"></div>
+      <div class="hero-ring"></div>
+    </div>
+    <p class="hero-eyebrow">Sábado 29 de Agosto · 7:00 PM</p>
+    <h1 class="hero-name">Yoselin</h1>
+    <div class="hero-divider"></div>
+    <p class="hero-subtitle">Quince años de luz, belleza y amor</p>
+    <div class="hero-date-chip">Finca La Victoria · Copacabana</div>
+    <div class="scroll-hint">
+      <span>Descubrir</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- SALUDO PERSONALIZADO -->
+  <section class="carta-section" style="text-align:center;padding-top:40px;padding-bottom:40px;">
+    <p class="section-eyebrow">Con cariño</p>
+    <p class="section-title" style="font-style:italic;">
+      <span id="display-greeting">Bienvenid@,</span><br>
+      <span class="greeting-name" id="display-guest-name">Invitado</span>
+    </p>
+    <p class="section-body" style="max-width:420px;margin:0 auto;" id="guest-status-msg">
+      Tu presencia hace este momento aún más especial. Estamos encantados de compartir esta noche tan significativa contigo.
+    </p>
+  </section>
+
+  <!-- JOURNEY OF YEARS -->
+  <div class="journey-section">
+
+    <section class="journey-chapter">
+      <div class="chapter-year">2010</div>
+      <div class="chapter-photo">
+       <img src="fotos/bebe.jpg" alt="Yoselin bebé">
+        <i class="fa-solid fa-star"></i>
+        <span>Foto de bebé</span>
+      </div>
+      <p class="chapter-tag">El comienzo · 2010</p>
+      <h2 class="chapter-title">Los primeros pasos</h2>
+      <p class="chapter-body">
+        Llegaste al mundo con una sonrisa que iluminó cada rincón. Cada paso tuyo,
+        por pequeño que fuera, fue una promesa de todo lo que estaba por venir.
+      </p>
+      <div class="chapter-divider"></div>
+    </section>
+
+    <div class="journey-connector"><div class="jc-dot"></div><div class="jc-dot"></div><div class="jc-dot"></div></div>
+
+    <section class="journey-chapter">
+      <div class="chapter-year">2015</div>
+      <div class="chapter-photo">
+        <img src="fotos/ninez.jpg" alt="Yoselin niña">
+        <i class="fa-solid fa-seedling"></i>
+        <span>Foto de niñez</span>
+      </div>
+      <p class="chapter-tag">La niña curiosa · 2015</p>
+      <h2 class="chapter-title">Aprendiendo a soñar</h2>
+      <p class="chapter-body">
+        Creciste con ojos llenos de asombro, descubriendo el mundo como si fuera
+        un jardín interminable. Cada pregunta tuya era una semilla de luz.
+      </p>
+      <div class="chapter-divider"></div>
+    </section>
+
+    <div class="journey-connector"><div class="jc-dot"></div><div class="jc-dot"></div><div class="jc-dot"></div></div>
+
+    <section class="journey-chapter">
+      <div class="chapter-year">2020</div>
+      <div class="chapter-photo">
+        <img src="fotos/adolescencia.jpg" alt="Yoselin adolescente">
+        <i class="fa-solid fa-leaf"></i>
+        <span>Foto adolescencia</span>
+      </div>
+      <p class="chapter-tag">La joven que florece · 2020</p>
+      <h2 class="chapter-title">Encontrando tu voz</h2>
+      <p class="chapter-body">
+        Con cada año que pasaba, tu personalidad floreció con más fuerza.
+        Aprendiste que tu voz importa, que tus sueños merecen espacio,
+        y que eres más de lo que imaginas.
+      </p>
+      <div class="chapter-divider"></div>
+    </section>
+
+    <div class="journey-connector"><div class="jc-dot"></div><div class="jc-dot"></div><div class="jc-dot"></div></div>
+
+    <section class="journey-chapter" style="background: radial-gradient(ellipse at 50% 50%, rgba(232,160,180,0.06) 0%, transparent 65%);">
+      <div class="chapter-year">2026</div>
+      <div class="chapter-photo" style="border-color:rgba(232,160,180,0.3);">
+        <img src="fotos/hoy.jpg" alt="Yoselin hoy">
+        <i class="fa-solid fa-crown" style="color:rgba(232,160,180,0.35);"></i>
+        <span>Foto actual · 2026</span>
+      </div>
+      <p class="chapter-tag" style="color:var(--gold);">Hoy, tus XV · 2026</p>
+      <h2 class="chapter-title" style="color:var(--gold-lt);">Una nueva primavera</h2>
+      <p class="chapter-body">
+        Hoy celebramos no solo los años vividos, sino todo lo que está por venir.
+        Esta noche, rodeada de las personas que amas, empiezas el capítulo más emocionante
+        de tu historia. Y queremos vivirlo contigo.
+      </p>
+      <div class="chapter-divider"></div>
+    </section>
+
+  </div><!-- /journey -->
+
+  <!-- ROSE EXPLOSION + FOTO YOSELIN + MENSAJE -->
+  <div class="rose-explosion-section" id="rose-section">
+    <canvas id="rose-canvas"></canvas>
+    <div class="rose-content" id="rose-content">
+      <div class="rose-photo-frame">
+        <img src="fotos/yoselin-principal.jpg" alt="Yoselin">
+        <div class="rose-photo-placeholder">
+          <i class="fa-regular fa-image"></i>
+          <span>Foto de Yoselin</span>
+        </div>
+      </div>
+      <p class="rose-message-title">Gracias por estar aquí</p>
+      <p class="rose-message-body">
+        "Si esta invitación llegó a tus manos, es porque de alguna manera
+        has sido parte de mi historia. Cada momento compartido, cada sonrisa,
+        cada abrazo — todo te ha traído hasta aquí esta noche. Gracias."
+      </p>
+      <p class="rose-sig">— Yoselin, con todo mi corazón</p>
+    </div>
+  </div>
+
+  <!-- FECHA Y LUGAR -->
+  <section class="carta-section">
+    <p class="section-eyebrow">El Evento</p>
+    <h2 class="section-title">Fecha &amp; Lugar</h2>
+    <div class="info-card">
+      <div class="info-row">
+        <div class="info-icon"><i class="fa-regular fa-calendar"></i></div>
+        <div>
+          <p class="info-label">Fecha</p>
+          <p class="info-value">Sábado 29 de Agosto, 2026</p>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><i class="fa-regular fa-clock"></i></div>
+        <div>
+          <p class="info-label">Hora</p>
+          <p class="info-value">7:00 PM</p>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><i class="fa-solid fa-location-dot"></i></div>
+        <div>
+          <p class="info-label">Lugar</p>
+          <p class="info-value">Finca La Victoria<br>
+            <span style="font-size:14px;color:var(--cream-dim);">Copacabana — Parcelación Limonar<br>(al frente de Cocorollo)</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DRESS CODE -->
+  <section class="carta-section">
+    <p class="section-eyebrow">Dress Code</p>
+    <h2 class="section-title">Código de Vestimenta</h2>
+    <p class="section-body" style="margin-bottom:0;">La elegancia de la noche se viste de negro. Traje cóctel negro para todos.</p>
+    <div class="dress-grid">
+      <div class="dress-card">
+        <i class="fa-solid fa-person-dress"></i>
+        <h4>Mujeres</h4>
+        <p>Vestido negro<br>y tacones</p>
+      </div>
+      <div class="dress-card">
+        <i class="fa-solid fa-person"></i>
+        <h4>Hombres</h4>
+        <p>Camisa negra<br>y jeans negros</p>
+      </div>
+    </div>
+    <div class="dress-alert">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>No se permiten gorras durante el protocolo del evento.</span>
+    </div>
+  </section>
+
+  <!-- MUESTRAS DE CARIÑO -->
+  <section class="carta-section">
+    <p class="section-eyebrow">Regalo</p>
+    <h2 class="section-title">Muestras de Cariño</h2>
+    <div class="gift-display">
+      <div style="display:flex;justify-content:center;gap:20px;">
+  <i class="fa-regular fa-envelope-open fa-fw envelope-big"></i>
+  <i class="fa-regular fa-envelope fa-fw envelope-big" style="animation-delay:1.4s;font-size:52px;margin-top:12px;opacity:0.85;"></i>
+</div>
+      <p class="gift-text">Lluvia de sobres</p>
+      <p class="gift-sub">Tu amor es el mejor regalo</p>
+    </div>
+  </section>
+
+  <!-- ITINERARIO -->
+  <section class="carta-section">
+    <p class="section-eyebrow">La Noche</p>
+    <h2 class="section-title">Itinerario</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <p class="tl-time">7:00 PM</p>
+        <p class="tl-event">Recepción de invitados</p>
+        <p class="tl-desc">Llegada y bienvenida</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <p class="tl-time">8:00 PM</p>
+        <p class="tl-event">Vals Imperial</p>
+        <p class="tl-desc">El momento más esperado de la noche</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <p class="tl-time">9:00 PM</p>
+        <p class="tl-event">Sesión de Fotos</p>
+        <p class="tl-desc">Capturando memorias para siempre</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <p class="tl-time">9:30 PM</p>
+        <p class="tl-event">Cena de Gala</p>
+        <p class="tl-desc">Una velada de sabores exquisitos</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"><div class="tl-dot-inner"></div></div>
+        <p class="tl-time">10:30 PM</p>
+        <p class="tl-event">Gran Rumba</p>
+        <p class="tl-desc">¡La fiesta no para hasta el amanecer!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENSAJE DE LA MAMÁ -->
+  <section class="carta-section">
+    <p class="section-eyebrow">Palabras del Corazón</p>
+    <h2 class="section-title">Con Todo mi Amor</h2>
+    <div class="mama-card">
+      <p class="mama-text">
+        "Verte llegar a esta hermosa etapa llena mi corazón de orgullo y emoción.
+        Que Dios guíe siempre tus pasos en esta nueva primavera que comienzas a vivir."
+      </p>
+      <div class="mama-signature">
+        <div class="mama-sig-line"></div>
+        <div style="text-align:right;">
+          <p class="mama-sig-text">Con todo mi amor</p>
+          <p class="mama-sig-name">Leidy Johana Álvarez</p>
+          <p class="mama-sig-text" style="color:var(--gold);font-style:italic;">tu mamá</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- RSVP -->
+<section class="carta-section rsvp-section" style="max-width:620px;">
+  <p class="section-eyebrow">Confirmación</p>
+  <h2 class="section-title" id="rsvp-group-label">¿Nos harás el honor?</h2>
+  <p class="rsvp-subtitle">Tu presencia es el regalo más grande de esta noche.</p>
+
+  <div class="rsvp-family-list" id="rsvp-family-list"></div>
+
+  <div class="rsvp-buttons">
+    <button class="btn-rsvp-confirm" id="btn-confirm-family">
+      <i class="fa-brands fa-whatsapp"></i>
+      Enviar confirmación
+    </button>
+    <button class="btn-rsvp-decline" id="btn-decline-family">
+      <i class="fa-solid fa-heart-crack" style="font-size:10px;"></i>
+      Lamentablemente no podré asistir
+    </button>
+  </div>
+  <p class="rsvp-current-status" id="rsvp-current-status"></p>
+</section>
+
+  <!-- FOOTER -->
+  <footer class="carta-footer">
+    <p class="footer-name">Yoselin</p>
+    <p class="footer-date">Sábado 29 de Agosto · 7:00 PM</p>
+    <p class="footer-place">Finca La Victoria · Copacabana · Parcelación Limonar</p>
+    <p class="footer-xv">XV Años</p>
+  </footer>
+
+</div><!-- /screen-carta -->
+
+<!-- RSVP MODAL — CONFIRM -->
+<div id="modal-confirm" class="rsvp-modal-overlay">
+  <div class="rsvp-modal-box">
+    <div class="rsvp-modal-icon">🌹</div>
+    <h3 class="rsvp-modal-title">¡Qué alegría!</h3>
+    <p class="rsvp-modal-sub">
+      Serás redirigido a WhatsApp para confirmar tu asistencia con la mamá de Yoselin.
+      Tu presencia hará esta noche aún más especial.
+    </p>
+    <a id="btn-whatsapp-confirm" class="btn-whatsapp" target="_blank">
+      <i class="fa-brands fa-whatsapp"></i>
+      Abrir WhatsApp
+    </a>
+    <button class="btn-modal-close" onclick="closeModal('modal-confirm')">Cerrar</button>
+  </div>
+</div>
+
+<!-- RSVP MODAL — DECLINE -->
+<div id="modal-decline" class="rsvp-modal-overlay">
+  <div class="rsvp-modal-box">
+    <div class="rsvp-modal-icon" style="font-size:36px;">🤍</div>
+    <h3 class="rsvp-modal-title">Te extrañaremos</h3>
+    <p class="rsvp-modal-sub">
+      Entendemos que no siempre es posible estar presentes, pero sepas que
+      aunque no estés físicamente, siempre tendrás un lugar en el corazón de Yoselin.
+      <br><br>
+      Si deseas enviar un mensaje de todos modos, puedes escribirle a la mamá.
+    </p>
+    <a id="btn-whatsapp-decline" class="btn-whatsapp" target="_blank">
+      <i class="fa-brands fa-whatsapp"></i>
+      Enviar un mensaje de igual modo
+    </a>
+    <button class="btn-modal-close" onclick="closeModal('modal-decline')">Cerrar</button>
+  </div>
+</div>
+
+<!-- FLOATING LOCK -->
+<button id="btn-admin-float" title="Panel privado">
+  <i class="fa-solid fa-lock"></i>
+</button>
+
+<!-- ADMIN LOGIN -->
+<div id="admin-login-overlay">
+  <div class="admin-login-box">
+    <h3>Acceso privado</h3>
+    <input type="password" id="admin-pass-input" placeholder="Contraseña" maxlength="30">
+    <p class="admin-login-err" id="admin-err"></p>
+    <button class="btn-admin-enter" id="btn-admin-confirm">Entrar</button>
+    <button class="btn-admin-cancel" id="btn-admin-cancel-login">Cancelar</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="screen-admin">
+  <div class="admin-header">
+    <div>
+      <h2 class="admin-title">Panel · Leidy Johana</h2>
+      <p class="admin-sync-note" id="admin-sync-note">Modo local (sin Supabase)</p>
+    </div>
+    <button class="admin-close" id="btn-close-admin"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="admin-stats">
+    <div class="stat-box"><p class="stat-num" id="stat-total">0</p><p class="stat-label">Total</p></div>
+    <div class="stat-box"><p class="stat-num" id="stat-confirmed">0</p><p class="stat-label">Confirmados</p></div>
+    <div class="stat-box"><p class="stat-num" id="stat-pending">0</p><p class="stat-label">Pendientes</p></div>
+  </div>
+
+  <!-- ADD GUEST FORM -->
+  <div class="add-guest-form">
+    <h4>Agregar invitado</h4>
+    <div class="add-form-row">
+      <input type="text" class="add-form-input" id="new-guest-name" placeholder="Nombre completo" maxlength="60">
+      <select class="add-form-select" id="new-guest-status">
+        <option value="pending">Pendiente</option>
+        <option value="confirmed">Confirmado</option>
+        <option value="declined">Rechazado</option>
+      </select>
+      <button class="btn-add-guest" id="btn-add-guest">
+        <i class="fa-solid fa-plus"></i> Agregar
+      </button>
+    </div>
+  </div>
+
+  <div class="admin-controls">
+    <button class="filter-btn active" data-filter="all">Todos</button>
+    <button class="filter-btn" data-filter="confirmed">Confirmados</button>
+    <button class="filter-btn" data-filter="pending">Pendientes</button>
+    <button class="filter-btn" data-filter="declined">Rechazados</button>
+  </div>
+  <div class="admin-search">
+    <input type="search" id="admin-search-input" placeholder="Buscar invitado...">
+  </div>
+  <div class="guest-list" id="guest-list"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIG SUPABASE (opcional)
+   USE_SUPABASE = false -> funciona todo en memoria local (como antes).
+   USE_SUPABASE = true  -> lee/escribe invitados en tu proyecto Supabase.
+   Sigue los "PASOS SUPABASE" al final de este archivo antes de activarlo.
+══════════════════════════════════════════════════ */
+const USE_SUPABASE = true;
+/* IMPORTANTE: SUPABASE_URL va SIN "/rest/v1/" al final — supabase-js lo agrega solo.
+   Usa exactamente la "Project URL" que Supabase muestra en Settings -> API. */
+const SUPABASE_URL = "https://rbdxutrpalbmuznvcobv.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJiZHh1dHJwYWxibXV6bnZjb2J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMzcyOTcsImV4cCI6MjA5ODYxMzI5N30.p16DZmSKWwMXQVc6-l-_IiYjjAgBvYPo3ErbhIOyTnQ";
+let supabaseClient = null;
+if (USE_SUPABASE && window.supabase) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+if (USE_SUPABASE && supabaseClient) {
+  supabaseClient
+    .channel('guests-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, async () => {
+      await sbLoadGuests();
+      if (document.getElementById('screen-admin').classList.contains('open')) {
+        updateAdminStats();
+        renderGuestList();
+      }
+    })
+    .subscribe();
+}
+
+let GUESTS = [
+  { id: 1, name: "Santiago",  status: "pending",   group_id: 100, group: { id: 100, name: "Familia Arango Escobar", type: "family" } },
+  { id: 2, name: "Saidy",     status: "pending",   group_id: 100, group: { id: 100, name: "Familia Arango Escobar", type: "family" } },
+  { id: 3, name: "Katherine", status: "confirmed", group_id: 100, group: { id: 100, name: "Familia Arango Escobar", type: "family" } },
+  { id: 4, name: "Sofía",     status: "confirmed", group_id: null, group: null },
+];
+let nextId = 5;
+let currentGuest = null;   // invitado que inició sesión en esta visita
+let currentFamily = [];    // todos los integrantes del grupo de currentGuest (incluido él mismo)
+
+/* ══════════════════════════════════════════════════
+   CONTRASEÑA DEL PANEL PRIVADO
+══════════════════════════════════════════════════ */
+const ADMIN_PASSWORD = "yoselin2026";
+
+/* ══════════════════════════════════════════════════
+   WHATSAPP CONFIG
+══════════════════════════════════════════════════ */
+const WA_NUMBER = "573225442301";
+
+/* ══════════════════════════════════════════════════
+   SUPABASE HELPERS (se usan solo si USE_SUPABASE = true)
+══════════════════════════════════════════════════ */
+async function sbLoadGuests() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient
+    .from("guests")
+    .select("*, group:groups(id,name,type)")
+    .order("id");
+  if (!error && data) { GUESTS = data; }
+}
+async function sbUpsertGuest(guest) {
+  if (!supabaseClient) return;
+  await supabaseClient.from("guests").upsert({ id: guest.id, name: guest.name, status: guest.status });
+}
+async function sbDeleteGuest(id) {
+  if (!supabaseClient) return;
+  await supabaseClient.from("guests").delete().eq("id", id);
+}
+async function persistGuest(guest) {
+  if (USE_SUPABASE) { await sbUpsertGuest(guest); }
+}
+
+/* ══════════════════════════════════════════════════
+   GENDER DETECTION (Spanish heuristic)
+══════════════════════════════════════════════════ */
+function detectGender(name) {
+  const n = name.trim().toLowerCase().split(" ")[0];
+  const maleExceptions = ["luca", "nikita", "andrea", "joshua", "ezra", "elia"];
+  const femaleExceptions = ["isabel", "rachel", "ruth", "luz", "nour", "mercedes", "ines", "soledad"];
+  if (femaleExceptions.some(e => n.startsWith(e))) return "f";
+  if (maleExceptions.includes(n)) return "m";
+  if (n.endsWith("a") || n.endsWith("ia")) return "f";
+  if (n.endsWith("o") || n.endsWith("os") || n.endsWith("io")) return "m";
+  return "n";
+}
+function greeting(name) {
+  const g = detectGender(name);
+  if (g === "f") return "Bienvenida,";
+  if (g === "m") return "Bienvenido,";
+  return "Bienvenid@,";
+}
+
+/* ══════════════════════════════════════════════════
+   GUEST LOOKUP
+══════════════════════════════════════════════════ */
+function findGuest(name) {
+  const n = name.trim().toLowerCase();
+  return GUESTS.find(g => g.name.toLowerCase().startsWith(n) || n.startsWith(g.name.toLowerCase())) || null;
+}
+function renderFamilyRSVP() {
+  const container = document.getElementById('rsvp-family-list');
+  const label = document.getElementById('rsvp-group-label');
+  container.innerHTML = '';
+
+  if (currentFamily.length <= 1) {
+    label.textContent = '¿Nos harás el honor?';
+  } else {
+    const groupName = currentGuest.group ? currentGuest.group.name : 'tu familia';
+    label.textContent = `Confirma quiénes de ${groupName} asistirán`;
+  }
+
+  currentFamily.forEach(member => {
+    const row = document.createElement('label');
+    row.className = 'rsvp-check-row';
+    row.innerHTML = `
+      <input type="checkbox" class="rsvp-checkbox" data-id="${member.id}"
+        ${member.status === 'confirmed' ? 'checked' : ''}>
+      <span>${member.name}</span>
+    `;
+    container.appendChild(row);
+  });
+  updateRsvpStatusLabel();
+}
+
+function updateRsvpStatusLabel() {
+  const el = document.getElementById('rsvp-current-status');
+  const confirmedCount = currentFamily.filter(m => m.status === 'confirmed').length;
+  el.textContent = `${confirmedCount} de ${currentFamily.length} confirmados en tu grupo.`;
+}
+
+async function adminChangeStatus(id, newStatus) {
+  const guest = GUESTS.find(g => g.id === id);
+  if (!guest) return;
+  guest.status = newStatus;
+  await persistGuest(guest);
+  updateAdminStats();
+  renderGuestList();
+}
+/* ══════════════════════════════════════════════════
+   PARTICLES
+══════════════════════════════════════════════════ */
+const pCanvas = document.getElementById("particle-canvas");
+const pCtx = pCanvas.getContext("2d");
+let particles = [];
+function resizeCanvas() { pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight; }
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+for (let i = 0; i < 90; i++) particles.push(mkParticle());
+function mkParticle() {
+  return {
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    r: Math.random() * 1.4 + 0.2,
+    alpha: Math.random() * 0.45 + 0.1,
+    vx: (Math.random() - 0.5) * 0.14,
+    vy: -(Math.random() * 0.18 + 0.04),
+    pulse: Math.random() * Math.PI * 2,
+    ps: Math.random() * 0.022 + 0.008,
+    hue: Math.random() > 0.5 ? 38 : 340,
+  };
+}
+function animateParticles() {
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  particles.forEach(p => {
+    p.pulse += p.ps;
+    const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    pCtx.fillStyle = p.hue === 38
+      ? `rgba(212,168,83,${a.toFixed(3)})`
+      : `rgba(232,160,180,${a.toFixed(3)})`;
+    pCtx.fill();
+    p.x += p.vx; p.y += p.vy;
+    if (p.y < -4) { p.y = pCanvas.height + 4; p.x = Math.random() * pCanvas.width; }
+    if (p.x < -4 || p.x > pCanvas.width + 4) p.x = Math.random() * pCanvas.width;
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+/* ══════════════════════════════════════════════════
+   BUTTERFLIES (dos mariposas con rutas independientes)
+══════════════════════════════════════════════════ */
+const butterfly1 = document.getElementById("butterfly-1");
+const butterfly2 = document.getElementById("butterfly-2");
+const butterfly3 = document.getElementById("butterfly-3");
+const bird1 = document.getElementById("bird-1");
+let bf1 = { x: window.innerWidth * 0.75, y: window.innerHeight * 0.3, tx: 0, ty: 0, t: 0 };
+let bf2 = { x: window.innerWidth * 0.22, y: window.innerHeight * 0.55, tx: 0, ty: 0, t: 2.4 };
+let bf3 = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.75, tx: 0, ty: 0, t: 1.1 };
+let bird = { x: -100, y: window.innerHeight * 0.15, t: 0 };
+
+function updateButterflies() {
+  bf1.t += 0.004;
+  bf2.t += 0.0033;
+  const scrollFrac = document.getElementById("screen-carta").scrollTop /
+    (document.getElementById("screen-carta").scrollHeight || 1);
+
+  bf1.tx = window.innerWidth * 0.72 + Math.sin(bf1.t * 1.3) * window.innerWidth * 0.18;
+  bf1.ty = window.innerHeight * 0.25 + Math.sin(bf1.t * 0.8) * window.innerHeight * 0.22 + scrollFrac * 40;
+  bf1.x += (bf1.tx - bf1.x) * 0.02;
+  bf1.y += (bf1.ty - bf1.y) * 0.02;
+  butterfly1.style.left = bf1.x + "px";
+  butterfly1.style.top  = bf1.y + "px";
+
+  bf2.tx = window.innerWidth * 0.24 + Math.cos(bf2.t * 1.1) * window.innerWidth * 0.15;
+  bf2.ty = window.innerHeight * 0.62 + Math.sin(bf2.t * 1.4) * window.innerHeight * 0.2 - scrollFrac * 30;
+  bf2.x += (bf2.tx - bf2.x) * 0.025;
+  bf2.y += (bf2.ty - bf2.y) * 0.025;
+  butterfly2.style.left = bf2.x + "px";
+  butterfly2.style.top  = bf2.y + "px";
+
+  bf3.t += 0.0045;
+  bf3.tx = window.innerWidth * 0.5 + Math.sin(bf3.t * 1.6) * window.innerWidth * 0.3;
+  bf3.ty = window.innerHeight * 0.7 + Math.cos(bf3.t * 1.0) * window.innerHeight * 0.15 + scrollFrac * 20;
+  bf3.x += (bf3.tx - bf3.x) * 0.022;
+  bf3.y += (bf3.ty - bf3.y) * 0.022;
+  butterfly3.style.left = bf3.x + "px";
+  butterfly3.style.top  = bf3.y + "px";
+
+  bird.t += 0.0025;
+  bird.x = (bird.t * window.innerWidth * 1.4) % (window.innerWidth + 300) - 150;
+  bird.y = window.innerHeight * 0.15 + Math.sin(bird.t * 8) * 40;
+  bird1.style.left = bird.x + "px";
+  bird1.style.top  = bird.y + "px";
+  bird1.style.transform = "scaleX(1)";
+
+  requestAnimationFrame(updateButterflies);
+}
+updateButterflies();
+
+/* ══════════════════════════════════════════════════
+   SCREEN TRANSITIONS
+══════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function blast(cb) {
+  const o = document.getElementById("blast-overlay");
+  o.style.pointerEvents = "all";
+  let t = 0;
+  const s1 = setInterval(() => {
+    t += 0.08; o.style.opacity = Math.min(t, 1).toFixed(3);
+    if (t >= 1) {
+      clearInterval(s1);
+      if (cb) cb();
+      let t2 = 1;
+      const s2 = setInterval(() => {
+        t2 -= 0.05; o.style.opacity = Math.max(t2, 0).toFixed(3);
+        if (t2 <= 0) { clearInterval(s2); o.style.pointerEvents = "none"; }
+      }, 18);
+    }
+  }, 14);
+}
+
+/* ══════════════════════════════════════════════════
+   SCREEN 1 — ABRIR
+══════════════════════════════════════════════════ */
+document.getElementById("btn-abrir").addEventListener("click", async () => {
+  if (USE_SUPABASE) { await sbLoadGuests(); }
+  blast(() => {
+    showScreen("screen-video");
+    const vid = document.getElementById("intro-video");
+    vid.currentTime = 0;
+    vid.muted = false;
+vid.play().catch(() => { vid.muted = true; vid.play().catch(goToLogin); });
+  });
+});
+const introVideo = document.getElementById("intro-video");
+introVideo.addEventListener("ended", goToLogin);
+introVideo.addEventListener("error", goToLogin);
+document.getElementById("btn-skip-video").addEventListener("click", goToLogin);
+function goToLogin() {
+  introVideo.pause();
+  introVideo.currentTime = 0;
+  showScreen("screen-login");
+  setTimeout(() => document.getElementById("guest-name-input").focus(), 350);
+}
+
+/* ══════════════════════════════════════════════════
+   LOGIN — guest lookup on input
+══════════════════════════════════════════════════ */
+document.getElementById("guest-name-input").addEventListener("input", function() {
+  const val = this.value.trim();
+  const badge = document.getElementById("guest-status-badge");
+  
+  if (!val) { badge.style.display = "none"; return; }
+  const found = findGuest(val);
+  if (found) {
+    const labels = { confirmed: "✓ Estás en la lista — Confirmado",
+                     pending: "⏳ Estás en la lista — Pendiente",
+                     declined: "Lista — Rechazado" };
+    const cls = { confirmed: "gsb-confirmed", pending: "gsb-pending", declined: "gsb-declined" };
+    badge.className = `guest-status-badge ${cls[found.status] || "gsb-unknown"}`;
+    badge.textContent = labels[found.status] || "En lista";
+    badge.style.display = "block";
+  } else if (val.length >= 3) {
+    badge.className = "guest-status-badge gsb-unknown";
+    badge.textContent = "No encontrado — se agregará como pendiente";
+    badge.style.display = "block";
+  } else {
+    badge.style.display = "none";
+  }
+});
+
+async function enterCarta() {
+  const input = document.getElementById("guest-name-input");
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  const greet = greeting(name);
+
+  document.getElementById("display-greeting").textContent = greet;
+  document.getElementById("display-guest-name").textContent = name;
+
+let found = findGuest(name);
+if (!found) {
+  found = { name, status: "pending" };
+  if (USE_SUPABASE) {
+    const { data } = await supabaseClient.from("guests").insert({ name, status: "pending" }).select().single();
+    if (data) { found.id = data.id; }
+  } else {
+    found.id = nextId++;
+  }
+  GUESTS.push(found);
+}
+currentGuest = found;
+currentFamily = found.group_id
+  ? GUESTS.filter(g => g.group_id === found.group_id)
+  : [found];
+renderFamilyRSVP();
+updateRsvpStatusLabel();
+
+  const msg = document.getElementById("guest-status-msg");
+  const statusMsg = {
+    confirmed: `¡Qué alegría, ${name.split(" ")[0]}! Tu asistencia está confirmada. Te esperamos con los brazos abiertos.`,
+    pending: `Hola, ${name.split(" ")[0]}. Tu invitación está aquí. No olvides confirmar tu asistencia más abajo.`,
+    declined: `${name.split(" ")[0]}, aunque no puedas acompañarnos, siempre tendrás un lugar en el corazón de Yoselin.`,
+  };
+  msg.textContent = statusMsg[found.status] || "Tu presencia hace este momento aún más especial.";
+
+  const guestFirstName = name.split(" ")[0];
+  document.getElementById("btn-whatsapp-confirm").href =
+    `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hola, soy ${name}. ¡Confirmo mi asistencia a los XV años de Yoselin! 🌹`)}`;
+  document.getElementById("btn-whatsapp-decline").href =
+    `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hola, soy ${name}. Lamentablemente no podré asistir a los XV de Yoselin, pero les mando todo mi cariño 🤍`)}`;
+
+  blast(() => {
+    document.querySelectorAll(".screen").forEach(s => { s.style.display = "none"; });
+    document.getElementById("screen-carta").style.display = "block";
+    document.getElementById("btn-admin-float").classList.add("visible");
+    document.getElementById("btn-audio").classList.add("visible");
+    butterfly1.classList.add("visible");
+    butterfly2.classList.add("visible");
+    butterfly3.classList.add("visible");
+bird1.classList.add("visible");
+    audio.play().then(() => {
+  audioIcon.className = "fa-solid fa-pause"; audioBtn.classList.add("playing"); audioPlaying = true;
+}).catch(() => {});
+    initLenis();
+    animateHero();
+    initScrollReveals();
+    initRoseSection();
+  });
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && audioPlaying) {
+    audio.pause(); audioIcon.className = "fa-solid fa-music"; audioBtn.classList.remove("playing"); audioPlaying = false;
+  }
+});
+document.getElementById("btn-enter").addEventListener("click", enterCarta);
+document.getElementById("guest-name-input").addEventListener("keydown", e => { if (e.key === "Enter") enterCarta(); });
+
+/* ══════════════════════════════════════════════════
+   MAMA LINK
+══════════════════════════════════════════════════ */
+document.getElementById("btn-mama-link").addEventListener("click", openAdminLogin);
+
+/* ══════════════════════════════════════════════════
+   AUDIO
+══════════════════════════════════════════════════ */
+const audio = document.getElementById("bg-audio");
+const audioBtn = document.getElementById("btn-audio");
+const audioIcon = document.getElementById("audio-icon");
+let audioPlaying = false;
+audioBtn.addEventListener("click", () => {
+  if (audioPlaying) {
+    audio.pause(); audioIcon.className = "fa-solid fa-music"; audioBtn.classList.remove("playing"); audioPlaying = false;
+  } else {
+    audio.play().then(() => {
+      audioIcon.className = "fa-solid fa-pause"; audioBtn.classList.add("playing"); audioPlaying = true;
+    }).catch(() => {});
+  }
+});
+
+/* ══════════════════════════════════════════════════
+   LENIS
+══════════════════════════════════════════════════ */
+let lenis;
+function initLenis() {
+  lenis = new Lenis({ smoothWheel: true, lerp: 0.08, duration: 1.2 });
+  lenis.on("scroll", ScrollTrigger.update);
+  gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+  gsap.ticker.lagSmoothing(0);
+}
+
+/* ══════════════════════════════════════════════════
+   HERO ANIMATION
+══════════════════════════════════════════════════ */
+function animateHero() {
+  gsap.registerPlugin(ScrollTrigger);
+  const tl = gsap.timeline({ delay: 0.3 });
+  tl.fromTo(".hero-eyebrow",   { opacity:0, y:10 }, { opacity:1, y:0, duration:1,   ease:"power2.out" }, 0)
+    .fromTo(".hero-name",      { opacity:0, y:30 }, { opacity:1, y:0, duration:1.3, ease:"power2.out" }, 0.2)
+    .fromTo(".hero-divider",   { opacity:0 },       { opacity:1,      duration:0.9, ease:"power2.out" }, 0.7)
+    .fromTo(".hero-subtitle",  { opacity:0, y:14 }, { opacity:1, y:0, duration:0.9, ease:"power2.out" }, 0.9)
+    .fromTo(".hero-date-chip", { opacity:0 },       { opacity:1,      duration:0.8, ease:"power2.out" }, 1.1)
+    .fromTo(".scroll-hint",    { opacity:0 },       { opacity:1,      duration:0.8, ease:"power2.out" }, 1.5);
+
+  gsap.to(".hero-ring:nth-child(1)", { rotation: 360,  duration:120, ease:"none", repeat:-1 });
+  gsap.to(".hero-ring:nth-child(2)", { rotation: -360, duration: 90, ease:"none", repeat:-1 });
+  gsap.to(".hero-ring:nth-child(3)", { rotation: 360,  duration: 60, ease:"none", repeat:-1 });
+  gsap.to(".hero-ring:nth-child(4)", { rotation: -360, duration: 40, ease:"none", repeat:-1 });
+
+  // Parallax sutil de la foto de fondo del hero
+  gsap.to("#hero-bg-photo", {
+    yPercent: 12, ease: "none",
+    scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true }
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SCROLL REVEALS
+══════════════════════════════════════════════════ */
+function initScrollReveals() {
+  function reveal(sel, from, to) {
+    const toFinal = { duration:0.95, ease:"power2.out", opacity:1, ...to };
+    gsap.utils.toArray(sel).forEach(el => {
+      gsap.fromTo(el, { opacity:0, ...from }, {
+        ...toFinal,
+        scrollTrigger: { trigger: el, start:"top 90%", toggleActions:"play none none none" }
+      });
+    });
+  }
+  reveal(".section-eyebrow",  { y:10 }, { y:0, duration:0.8 });
+  reveal(".section-title",    { y:32 }, { y:0, duration:1.05 });
+  reveal(".section-body",     { y:18 }, { y:0, duration:0.9  });
+  reveal(".info-card",        { y:16, scale:0.97 }, { y:0, scale:1 });
+  reveal(".dress-grid",       { y:22 }, { y:0 });
+  reveal(".dress-alert",      { y:12 }, { y:0, duration:0.8 });
+  reveal(".gift-display",     { y:20, scale:0.96 }, { y:0, scale:1, duration:1.05 });
+  reveal(".timeline",         { x:-20 }, { x:0, duration:1.05 });
+  reveal(".mama-card",        { y:20, scale:0.97 }, { y:0, scale:1, duration:1.1 });
+  reveal(".rsvp-section",     { y:28 }, { y:0, duration:1.05 });
+  reveal(".btn-rsvp-confirm", { scale:0.95 }, { scale:1, ease:"back.out(1.4)", duration:0.9 });
+  reveal(".carta-footer",     { y:16 }, { y:0, duration:0.9 });
+  reveal(".chapter-tag",      { y:12 }, { y:0, duration:0.8 });
+  reveal(".chapter-title",    { y:28 }, { y:0, duration:1.05 });
+  reveal(".chapter-body",     { y:18 }, { y:0, duration:0.9 });
+reveal(".chapter-photo", { scale:0.9, y:30, filter:"blur(8px)" }, { scale:1, y:0, filter:"blur(0px)", duration:2.4, ease:"sine.out" });  reveal(".chapter-divider",  {}, { duration:0.8 });
+  reveal(".rsvp-current-status", { y:8 }, { y:0, duration:0.7 });
+  ScrollTrigger.refresh();
+}
+
+/* ══════════════════════════════════════════════════
+   ROSE EXPLOSION SECTION
+══════════════════════════════════════════════════ */
+function initRoseSection() {
+  const roseCanvas = document.getElementById("rose-canvas");
+  const rCtx = roseCanvas.getContext("2d");
+  let roses = [];
+  let rosesFired = false;
+
+  function resizeRoseCanvas() {
+    const sec = document.getElementById("rose-section");
+    roseCanvas.width = sec.offsetWidth;
+    roseCanvas.height = sec.offsetHeight;
+  }
+  resizeRoseCanvas();
+
+  function fireRoses() {
+    rosesFired = true;
+    const W = roseCanvas.width, H = roseCanvas.height;
+    const cx = W / 2, cy = H / 2;
+    for (let i = 0; i < 60; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 5 + 2;
+      roses.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        gravity: 0.12,
+        alpha: 1,
+        size: Math.random() * 14 + 8,
+        char: ["🌹","🌸","✿","❀","🌺"][Math.floor(Math.random() * 5)],
+        rotation: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.12,
+      });
+    }
+    setTimeout(() => {
+      document.getElementById("rose-content").classList.add("revealed");
+    }, 600);
+  }
+
+  function animateRoses() {
+    rCtx.clearRect(0, 0, roseCanvas.width, roseCanvas.height);
+    roses = roses.filter(r => r.alpha > 0.01);
+    roses.forEach(r => {
+      r.x += r.vx; r.y += r.vy; r.vy += r.gravity;
+      r.alpha -= 0.008; r.rotation += r.rotSpeed;
+      rCtx.save();
+      rCtx.globalAlpha = Math.max(0, r.alpha);
+      rCtx.translate(r.x, r.y);
+      rCtx.rotate(r.rotation);
+      rCtx.font = `${r.size}px serif`;
+      rCtx.textAlign = "center";
+      rCtx.textBaseline = "middle";
+      rCtx.fillText(r.char, 0, 0);
+      rCtx.restore();
+    });
+    requestAnimationFrame(animateRoses);
+  }
+  animateRoses();
+
+  ScrollTrigger.create({
+    trigger: "#rose-section",
+    start: "top 60%",
+    onEnter: () => { if (!rosesFired) fireRoses(); },
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   RSVP — actualiza el estado del invitado actual
+══════════════════════════════════════════════════ */
+function updateRsvpStatusLabel() {
+  const el = document.getElementById("rsvp-current-status");
+  if (!currentGuest) { el.textContent = ""; return; }
+  const labels = {
+    confirmed: "Tu asistencia ya está confirmada. ¡Gracias!",
+    pending: "Aún no has confirmado tu asistencia.",
+    declined: "Registramos que no podrás asistir.",
+  };
+  el.textContent = labels[currentGuest.status] || "";
+}
+
+async function setGuestStatus(status) {
+  if (!currentGuest) return;
+  currentGuest.status = status;
+  await persistGuest(currentGuest);
+  updateRsvpStatusLabel();
+  // si el panel admin está abierto, refresca la vista en vivo
+  if (document.getElementById("screen-admin").classList.contains("open")) {
+    updateAdminStats();
+    renderGuestList();
+  }
+}
+
+function renderFamilyRSVP() {
+  const container = document.getElementById('rsvp-family-list');
+  const label = document.getElementById('rsvp-group-label');
+  container.innerHTML = '';
+
+  if (currentFamily.length <= 1) {
+    label.textContent = '¿Nos harás el honor?';
+  } else {
+    const groupName = currentGuest.group ? currentGuest.group.name : 'tu familia';
+    label.textContent = `Confirma quiénes de ${groupName} asistirán`;
+  }
+
+  currentFamily.forEach(member => {
+    const row = document.createElement('label');
+    row.className = 'rsvp-check-row';
+    row.innerHTML = `
+      <input type="checkbox" class="rsvp-checkbox" data-id="${member.id}"
+        ${member.status === 'confirmed' ? 'checked' : ''}>
+      <span>${member.name}</span>
+    `;
+    container.appendChild(row);
+  });
+  updateRsvpStatusLabel();
+}
+
+async function submitFamilyRSVP(declineAll) {
+  const checkboxes = document.querySelectorAll('.rsvp-checkbox');
+  const results = [];
+
+  for (const cb of checkboxes) {
+    if (declineAll) cb.checked = false;
+    const id = parseInt(cb.dataset.id);
+    const member = currentFamily.find(m => m.id === id);
+    member.status = cb.checked ? 'confirmed' : 'declined';
+    await persistGuest(member);
+    results.push(`${member.name}: ${cb.checked ? '✅ Asiste' : '❌ No asiste'}`);
+  }
+
+  updateRsvpStatusLabel();
+
+  const isSolo = currentFamily.length === 1;
+  const groupName = currentGuest.group ? currentGuest.group.name : currentGuest.name;
+  const intro = isSolo ? `Hola! Soy ${currentGuest.name}.` : `Hola! Somos ${groupName}.`;
+  const mensaje = (declineAll && isSolo)
+    ? `${intro}\n\nLamentablemente no podré asistir a los XV años de Yoselin, pero les mando todo mi cariño 🤍`
+    : `${intro}\n\nConfirmación de asistencia a los XV años de Yoselin:\n\n${results.join('\n')}`;
+
+  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(mensaje)}`, '_blank');
+
+  if (document.getElementById('screen-admin').classList.contains('open')) {
+    updateAdminStats();
+    renderGuestList();
+  }
+}
+
+document.getElementById('btn-confirm-family').addEventListener('click', () => submitFamilyRSVP(false));
+document.getElementById('btn-decline-family').addEventListener('click', () => submitFamilyRSVP(true));
+
+function updateRsvpStatusLabel() {
+  const el = document.getElementById('rsvp-current-status');
+  const confirmedCount = currentFamily.filter(m => m.status === 'confirmed').length;
+  el.textContent = `${confirmedCount} de ${currentFamily.length} confirmados en tu grupo.`;
+}
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll(".rsvp-modal-overlay").forEach(m => {
+  m.addEventListener("click", function(e) { if (e.target === this) this.classList.remove("open"); });
+});
+
+/* ══════════════════════════════════════════════════
+   ADMIN SYSTEM
+══════════════════════════════════════════════════ */
+document.getElementById("btn-admin-float").addEventListener("click", openAdminLogin);
+document.getElementById("btn-admin-confirm").addEventListener("click", checkAdminPass);
+document.getElementById("btn-admin-cancel-login").addEventListener("click", closeAdminLogin);
+document.getElementById("admin-pass-input").addEventListener("keydown", e => { if (e.key === "Enter") checkAdminPass(); });
+document.getElementById("btn-close-admin").addEventListener("click", () => { document.getElementById("screen-admin").classList.remove("open"); });
+
+function openAdminLogin() {
+  document.getElementById("admin-login-overlay").classList.add("open");
+  document.getElementById("admin-pass-input").value = "";
+  document.getElementById("admin-err").textContent = "";
+  setTimeout(() => document.getElementById("admin-pass-input").focus(), 200);
+}
+function closeAdminLogin() { document.getElementById("admin-login-overlay").classList.remove("open"); }
+async function checkAdminPass() {
+  if (document.getElementById("admin-pass-input").value === ADMIN_PASSWORD) {
+    closeAdminLogin();
+    if (USE_SUPABASE) { await sbLoadGuests(); }
+    document.getElementById("admin-sync-note").textContent = USE_SUPABASE ? "Sincronizado con Supabase" : "Modo local (sin Supabase)";
+    openAdmin();
+  } else {
+    document.getElementById("admin-err").textContent = "Contraseña incorrecta";
+    document.getElementById("admin-pass-input").value = "";
+    document.getElementById("admin-pass-input").focus();
+  }
+}
+
+let adminFilter = "all";
+let highlightGuestName = "";
+
+function openAdmin() {
+  updateAdminStats();
+  renderGuestList();
+  document.getElementById("screen-admin").classList.add("open");
+}
+
+function updateAdminStats() {
+  document.getElementById("stat-total").textContent = GUESTS.length;
+  document.getElementById("stat-confirmed").textContent = GUESTS.filter(g => g.status === "confirmed").length;
+  document.getElementById("stat-pending").textContent = GUESTS.filter(g => g.status === "pending").length;
+}
+
+function renderGuestList() {
+  const container = document.getElementById("guest-list");
+  const query = document.getElementById("admin-search-input").value.toLowerCase().trim();
+  let list = GUESTS;
+
+  if (adminFilter !== "all") list = list.filter(g => g.status === adminFilter);
+  if (query) list = list.filter(g => g.name.toLowerCase().includes(query));
+
+  container.innerHTML = "";
+
+  if (!list.length) {
+    container.innerHTML = `<p style="text-align:center;color:var(--cream-dim);font-family:var(--sans);font-size:13px;padding:24px;">Sin resultados</p>`;
+    return;
+  }
+
+  list.forEach(g => {
+    const groupName = g.group ? g.group.name : 'Individual';
+    const row = document.createElement("div");
+    const isHL = highlightGuestName && g.name.toLowerCase().includes(highlightGuestName.toLowerCase());
+    row.className = `guest-row${isHL ? " highlighted" : ""}`;
+    row.innerHTML = `
+      <span class="guest-name">
+        ${g.name}
+        <small style="color:var(--cream-dim)">(${groupName})</small>
+        ${isHL ? ' <span style="font-size:10px;color:var(--gold);">← tú</span>' : ""}
+      </span>
+      <select class="status-select" onchange="adminChangeStatus(${g.id}, this.value)">
+        <option value="pending" ${g.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+        <option value="confirmed" ${g.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
+        <option value="declined" ${g.status === 'declined' ? 'selected' : ''}>Rechazado</option>
+      </select>
+      <button class="btn-delete-guest" onclick="deleteGuest(${g.id})" title="Eliminar">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// Add guest
+document.getElementById("btn-add-guest").addEventListener("click", async () => {
+  const name = document.getElementById("new-guest-name").value.trim();
+  const status = document.getElementById("new-guest-status").value;
+  if (!name) return;
+  const g = { id: nextId++, name, status };
+  GUESTS.push(g);
+  await persistGuest(g);
+  document.getElementById("new-guest-name").value = "";
+  updateAdminStats();
+  renderGuestList();
+});
+document.getElementById("new-guest-name").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("btn-add-guest").click();
+});
+
+async function adminChangeStatus(id, newStatus) {
+  const guest = GUESTS.find(g => g.id === id);
+  if (!guest) return;
+  guest.status = newStatus;
+  await persistGuest(guest);
+  updateAdminStats();
+  renderGuestList();
+}
+
+// Delete guest
+async function deleteGuest(id) {
+  GUESTS = GUESTS.filter(g => g.id !== id);
+  if (USE_SUPABASE) { await sbDeleteGuest(id); }
+  updateAdminStats();
+  renderGuestList();
+}
+
+// Filters
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    adminFilter = this.dataset.filter;
+    renderGuestList();
+  });
+});
+document.getElementById("admin-search-input").addEventListener("input", renderGuestList);
+</script>
+</body>
+</html>
