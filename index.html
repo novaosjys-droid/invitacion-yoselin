@@ -1494,10 +1494,11 @@ outline-offset: 4px;
     </div>
     <button class="admin-close" id="btn-close-admin"><i class="fa-solid fa-xmark"></i></button>
   </div>
-  <div class="admin-stats">
+  <div class="admin-stats" style="grid-template-columns: repeat(4, 1fr);">
     <div class="stat-box"><p class="stat-num" id="stat-total">0</p><p class="stat-label">Total</p></div>
     <div class="stat-box"><p class="stat-num" id="stat-confirmed">0</p><p class="stat-label">Confirmados</p></div>
     <div class="stat-box"><p class="stat-num" id="stat-pending">0</p><p class="stat-label">Pendientes</p></div>
+    <div class="stat-box"><p class="stat-num" id="stat-declined">0</p><p class="stat-label">Rechazados</p></div>
   </div>
 
   <!-- ADD GUEST FORM -->
@@ -2251,6 +2252,7 @@ function updateAdminStats() {
   document.getElementById("stat-total").textContent = GUESTS.length;
   document.getElementById("stat-confirmed").textContent = GUESTS.filter(g => g.status === "confirmed").length;
   document.getElementById("stat-pending").textContent = GUESTS.filter(g => g.status === "pending").length;
+  document.getElementById("stat-declined").textContent = GUESTS.filter(g => g.status === "declined").length;
 }
 
 function renderGuestList() {
